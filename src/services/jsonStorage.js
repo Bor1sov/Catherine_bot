@@ -4,82 +4,75 @@ const moment = require('moment');
 
 class JsonStorage {
   constructor() {
-    this.filePath = path.join(__dirname, '../data/notifications.json');
-    this._ensureStorageExists();
+    this.filePath = path.join(__dirname, '../../data/notifications.json');
+    this._initStorage();
   }
 
-  // Создает файл, если он не существует
-  _ensureStorageExists() {
+  _initStorage() {
     if (!fs.existsSync(path.dirname(this.filePath))) {
       fs.mkdirSync(path.dirname(this.filePath), { recursive: true });
     }
     if (!fs.existsSync(this.filePath)) {
-      fs.writeFileSync(this.filePath, JSON.stringify([]));
+      fs.writeFileSync(this.filePath, '[]', 'utf8');
     }
   }
 
-  // Чтение всех данных
-  _readData() {
+  async _readData() {
     try {
-      const data = fs.readFileSync(this.filePath, 'utf8');
-      return JSON.parse(data);
+      const data = await fs.promises.readFile(this.filePath, 'utf8');
+      return JSON.parse(data) || [];
     } catch (error) {
       console.error('Error reading storage file:', error);
       return [];
     }
   }
 
-  // Запись данных
-  _writeData(data) {
+  async _writeData(data) {
     try {
-      fs.writeFileSync(this.filePath, JSON.stringify(data, null, 2));
+      await fs.promises.writeFile(this.filePath, JSON.stringify(data, null, 2));
     } catch (error) {
       console.error('Error writing to storage file:', error);
+      throw error;
     }
   }
 
-  // Добавление уведомления
-  async addNotification(chatId, date, text) {
-    const notifications = this._readData();
-    const newNotification = {
+  async addNotification(chatId, text, dateStr) {
+    const data = await this._readData();
+    const newNote = {
       id: Date.now().toString(),
       chatId,
-      date: moment(date, 'DD.MM.YYYY').toISOString(),
       text,
+      date: moment(dateStr, 'DD.MM.YYYY').toISOString(),
       sent: false,
       createdAt: new Date().toISOString()
     };
-    notifications.push(newNotification);
-    this._writeData(notifications);
-    return newNotification;
+    data.push(newNote);
+    await this._writeData(data);
+    return newNote;
   }
 
-  // Получение уведомлений пользователя
-  async getUserNotifications(chatId) {
-    const notifications = this._readData();
-    return notifications.filter(n => 
-      n.chatId === chatId && 
-      !n.sent && 
-      moment(n.date).isAfter(moment())
-    );
-  }
-
-  // Пометить уведомление как отправленное
-  async markAsSent(id) {
-    const notifications = this._readData();
-    const updated = notifications.map(n => 
-      n.id === id ? { ...n, sent: true } : n
-    );
-    this._writeData(updated);
-  }
-
-  // Получить все уведомления для отправки
   async getPendingNotifications() {
-    const notifications = this._readData();
-    return notifications.filter(n => 
-      !n.sent && 
-      moment(n.date).isSameOrBefore(moment())
+    const data = await this._readData();
+    return data.filter(note => 
+      !note.sent && 
+      moment(note.date).isSameOrBefore(moment())
     );
+  }
+
+  async getUserNotifications(chatId) {
+    const data = await this._readData();
+    return data.filter(note => 
+      note.chatId === chatId && 
+      !note.sent
+    );
+  }
+
+  async markAsSent(id) {
+    const data = await this._readData();
+    const updated = data.map(note => 
+      note.id === id ? { ...note, sent: true } : note
+    );
+    await this._writeData(updated);
   }
 }
 
