@@ -1,0 +1,7 @@
+# Игнорировать папку node_modules
+node_modules/
+
+# Игнорировать .env файлы (но оставить .env.example как шаблон)
+.env
+.env*
+!.env.example
