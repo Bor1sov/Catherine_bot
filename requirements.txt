@@ -1,0 +1,19 @@
+# Основные зависимости
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-telegram-bot==20.7
+requests==2.31.0
+python-dotenv==1.0.0
+
+# Для работы с датами
+python-dateutil==2.8.2
+
+# Для кэширования
+cachetools==5.3.2
+
+# Для планировщика задач
+APScheduler==3.10.4
+
+# Для разработки
+pytest==7.4.3
+pytest-asyncio==0.21.1

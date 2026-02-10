@@ -13,3 +13,6 @@
 
 ## Environment Variables
 See `.env.example`
+
+# 10.02.2026
+ - Перенесен на python
